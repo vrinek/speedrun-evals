@@ -2,27 +2,16 @@
 //! The parsers are pure; `detect` does the reading.
 
 use speedrun_core::{Gpu, Hardware};
-use std::{fs, process::Command};
+use std::fs;
 
-pub fn detect() -> Result<Hardware, String> {
+/// `devices` is the output of `llama-server --list-devices`: the GPUs recorded
+/// are the ones the runtime can actually use, not merely the ones installed.
+pub fn detect(devices: &str) -> Result<Hardware, String> {
     let read = |path: &str| fs::read_to_string(path).map_err(|e| format!("{path}: {e}"));
-    let lspci = Command::new("lspci")
-        .arg("-Dmm")
-        .output()
-        .map_err(|e| format!("could not run lspci: {e}"))?;
-    let gpus = parse_gpus(&String::from_utf8_lossy(&lspci.stdout))
-        .into_iter()
-        .map(|(slot, name)| {
-            // ponytail: amdgpu and friends expose this; the proprietary NVIDIA driver
-            // does not, so those cards report no VRAM until we parse nvidia-smi.
-            let vram = fs::read_to_string(format!("/sys/bus/pci/devices/{slot}/mem_info_vram_total"));
-            Gpu { name, vram_gb: vram.ok().and_then(|bytes| vram_gb(&bytes)) }
-        })
-        .collect();
     Ok(Hardware {
         cpu: parse_cpu(&read("/proc/cpuinfo")?),
         ram_gb: parse_ram_gb(&read("/proc/meminfo")?)?,
-        gpus,
+        gpus: parse_gpus(devices),
         os: format!("Linux {}", read("/proc/sys/kernel/osrelease")?.trim()),
     })
 }
@@ -46,39 +35,24 @@ pub fn parse_ram_gb(meminfo: &str) -> Result<u32, String> {
     Ok((kb.div_ceil(4 * 1024 * 1024) * 4) as u32)
 }
 
-/// `(pci slot, display name)` for every graphics device in `lspci -Dmm` output.
-pub fn parse_gpus(lspci: &str) -> Vec<(String, String)> {
-    lspci
+/// GPUs from `llama-server --list-devices`, whose device lines look like
+/// `  Vulkan0: AMD Radeon 8060S Graphics (RADV STRIX_HALO) (96512 MiB, 14011 MiB free)`.
+/// For integrated GPUs the memory is the share of system RAM the driver may use.
+pub fn parse_gpus(devices: &str) -> Vec<Gpu> {
+    devices
         .lines()
         .filter_map(|line| {
-            let (slot, rest) = line.split_once(' ')?;
-            // Fields are quoted: class, vendor, device, ...
-            let fields: Vec<&str> = rest.split('"').skip(1).step_by(2).collect();
-            let [class, vendor, device, ..] = fields[..] else { return None };
-            if !["VGA", "3D", "Display"].iter().any(|kind| class.contains(kind)) {
-                return None;
-            }
-            let vendor = ["NVIDIA", "AMD", "Intel"]
-                .into_iter()
-                .find(|short| vendor.contains(short))
-                .unwrap_or(vendor);
-            // pci.ids puts the marketing name in brackets: `GA102 [GeForce RTX 3090]`.
-            // ponytail: one PCI id can cover several products (see the Strix Halo
-            // test case); telling them apart needs a per-vendor lookup.
-            let device = device
-                .split_once('[')
-                .and_then(|(_, name)| name.strip_suffix(']'))
-                .unwrap_or(device);
-            Some((slot.to_string(), format!("{vendor} {device}")))
+            let (_, device) = line.trim().split_once(": ")?;
+            let (name, memory) = device.rsplit_once(" (")?;
+            let mib: f64 = memory.split_once(" MiB")?.0.parse().ok()?;
+            // Drop the driver note, e.g. ` (RADV STRIX_HALO)`.
+            let name = name.split_once(" (").map_or(name, |(name, _)| name);
+            Some(Gpu {
+                name: name.to_string(),
+                vram_gb: Some((mib / 1024.0).round() as u32),
+            })
         })
         .collect()
-}
-
-/// Dedicated VRAM in GB from a sysfs byte count. Integrated GPUs report a token
-/// amount (they use system RAM), which is reported as no dedicated VRAM.
-pub fn vram_gb(bytes: &str) -> Option<u32> {
-    let gb = (bytes.trim().parse::<u64>().ok()? as f64 / (1u64 << 30) as f64).round() as u32;
-    (gb >= 2).then_some(gb)
 }
 
 #[cfg(test)]
@@ -101,29 +75,28 @@ mod tests {
     }
 
     #[test]
-    fn finds_graphics_devices_and_names_them() {
-        let lspci = r#"0000:00:00.0 "Host bridge" "Advanced Micro Devices, Inc. [AMD]" "Device 1507" -p00 "" ""
-0000:01:00.0 "VGA compatible controller" "NVIDIA Corporation" "GA102 [GeForce RTX 3090]" -ra1 -p00 "ASUSTeK Computer Inc." "Device 87b3"
-0000:c3:00.0 "Display controller" "Advanced Micro Devices, Inc. [AMD/ATI]" "Strix Halo [Radeon Graphics / Radeon 8050S Graphics / Radeon 8060S Graphics]" -rc1 -p00 "Framework Computer Inc." "Device 000a"
-0000:05:00.0 "3D controller" "Intel Corporation" "Device 56a0" -r08 "" ""
-"#;
+    fn reads_gpus_the_runtime_can_use() {
+        let devices = "ggml_vulkan: Found 2 Vulkan devices\nAvailable devices:\n  \
+            Vulkan0: AMD Radeon 8060S Graphics (RADV STRIX_HALO) (96512 MiB, 14011 MiB free)\n  \
+            Vulkan1: NVIDIA GeForce RTX 3090 (24576 MiB, 24000 MiB free)\n";
         assert_eq!(
-            parse_gpus(lspci),
+            parse_gpus(devices),
             vec![
-                ("0000:01:00.0".to_string(), "NVIDIA GeForce RTX 3090".to_string()),
-                (
-                    "0000:c3:00.0".to_string(),
-                    "AMD Radeon Graphics / Radeon 8050S Graphics / Radeon 8060S Graphics".to_string()
-                ),
-                ("0000:05:00.0".to_string(), "Intel Device 56a0".to_string()),
+                Gpu {
+                    name: "AMD Radeon 8060S Graphics".into(),
+                    vram_gb: Some(94)
+                },
+                Gpu {
+                    name: "NVIDIA GeForce RTX 3090".into(),
+                    vram_gb: Some(24)
+                },
             ]
         );
     }
 
     #[test]
-    fn reports_dedicated_vram_only() {
-        assert_eq!(vram_gb("25757220864\n"), Some(24));
-        assert_eq!(vram_gb("536870912\n"), None);
-        assert_eq!(vram_gb("garbage"), None);
+    fn no_devices_means_a_cpu_only_run() {
+        assert_eq!(parse_gpus("Available devices:\n  (none)\n"), vec![]);
+        assert_eq!(parse_gpus(""), vec![]);
     }
 }

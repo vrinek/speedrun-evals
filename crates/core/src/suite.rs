@@ -7,8 +7,9 @@ use std::collections::HashSet;
 pub struct Suite {
     pub name: String,
     pub version: u32,
-    /// System prompt sent with every task. Must tell the model to finish with `ANSWER: <x>`.
-    pub system: String,
+    /// Appended to every task prompt. Must tell the model to finish with `ANSWER: <x>`.
+    /// It goes in the user message because small models ignore system prompts.
+    pub instructions: String,
     /// Output token cap per task, so a looping model cannot run forever.
     pub max_tokens: u32,
     #[serde(rename = "task")]
@@ -54,7 +55,9 @@ pub fn extract_answer(output: &str) -> Option<&str> {
 
 /// Models decorate answers (`**Paris**.`); compare without the decoration.
 fn normalise(answer: &str) -> String {
-    answer.trim_matches(|c: char| c.is_whitespace() || "*`\"'.".contains(c)).to_lowercase()
+    answer
+        .trim_matches(|c: char| c.is_whitespace() || "*`\"'.".contains(c))
+        .to_lowercase()
 }
 
 #[cfg(test)]
@@ -64,7 +67,7 @@ mod tests {
     const SUITE: &str = r#"
 name = "demo"
 version = 1
-system = "End with ANSWER: <x>"
+instructions = "End with ANSWER: <x>"
 max_tokens = 512
 
 [[task]]
@@ -95,7 +98,7 @@ answer = "Paris"
 
     #[test]
     fn rejects_an_empty_suite() {
-        assert!(Suite::parse("name = \"x\"\nversion = 1\nsystem = \"s\"\nmax_tokens = 1\ntask = []").is_err());
+        assert!(Suite::parse("name = \"x\"\nversion = 1\ninstructions = \"s\"\nmax_tokens = 1\ntask = []").is_err());
     }
 
     #[test]

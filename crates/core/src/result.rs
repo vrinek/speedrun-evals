@@ -62,7 +62,10 @@ impl RunResult {
     pub fn from_json(text: &str) -> Result<RunResult, String> {
         let run: RunResult = serde_json::from_str(text).map_err(|e| e.to_string())?;
         if run.schema_version != SCHEMA_VERSION {
-            return Err(format!("unsupported schema_version {}, expected {SCHEMA_VERSION}", run.schema_version));
+            return Err(format!(
+                "unsupported schema_version {}, expected {SCHEMA_VERSION}",
+                run.schema_version
+            ));
         }
         if run.tasks.is_empty() {
             return Err("run has no tasks".into());
@@ -134,18 +137,47 @@ mod tests {
             hardware: Hardware {
                 cpu: "AMD Ryzen 9 7950X".into(),
                 ram_gb: 64,
-                gpus: vec![Gpu { name: "NVIDIA GeForce RTX 4090".into(), vram_gb: Some(24) }],
+                gpus: vec![Gpu {
+                    name: "NVIDIA GeForce RTX 4090".into(),
+                    vram_gb: Some(24),
+                }],
                 os: "Linux 7.2".into(),
             },
-            model: ModelRef { id: "tiny-q4".into(), sha256: "ab".repeat(32) },
-            runtime: Runtime { name: "llama.cpp".into(), version: "b1234".into() },
+            model: ModelRef {
+                id: "tiny-q4".into(),
+                sha256: "ab".repeat(32),
+            },
+            runtime: Runtime {
+                name: "llama.cpp".into(),
+                version: "b1234".into(),
+            },
             benchmark: "demo".into(),
             benchmark_version: 1,
             tasks: vec![
-                TaskResult { id: "a".into(), passed: true, wall_ms: 1500, output_tokens: 100 },
-                TaskResult { id: "b".into(), passed: false, wall_ms: 500, output_tokens: 40 },
-                TaskResult { id: "c".into(), passed: true, wall_ms: 1000, output_tokens: 60 },
-                TaskResult { id: "d".into(), passed: true, wall_ms: 1000, output_tokens: 50 },
+                TaskResult {
+                    id: "a".into(),
+                    passed: true,
+                    wall_ms: 1500,
+                    output_tokens: 100,
+                },
+                TaskResult {
+                    id: "b".into(),
+                    passed: false,
+                    wall_ms: 500,
+                    output_tokens: 40,
+                },
+                TaskResult {
+                    id: "c".into(),
+                    passed: true,
+                    wall_ms: 1000,
+                    output_tokens: 60,
+                },
+                TaskResult {
+                    id: "d".into(),
+                    passed: true,
+                    wall_ms: 1000,
+                    output_tokens: 50,
+                },
             ],
         }
     }
@@ -167,7 +199,9 @@ mod tests {
 
     #[test]
     fn rejects_unknown_fields() {
-        let json = serde_json::to_string(&sample()).unwrap().replacen('{', "{\"extra\":1,", 1);
+        let json = serde_json::to_string(&sample())
+            .unwrap()
+            .replacen('{', "{\"extra\":1,", 1);
         assert!(RunResult::from_json(&json).is_err());
     }
 
@@ -196,7 +230,10 @@ mod tests {
     #[test]
     fn hardware_label_and_slug() {
         let hw = sample().hardware;
-        assert_eq!(hw.label(), "AMD Ryzen 9 7950X · NVIDIA GeForce RTX 4090 24GB · 64GB RAM");
+        assert_eq!(
+            hw.label(),
+            "AMD Ryzen 9 7950X · NVIDIA GeForce RTX 4090 24GB · 64GB RAM"
+        );
         assert_eq!(hw.slug(), "amd-ryzen-9-7950x--nvidia-geforce-rtx-4090-24gb--64gb-ram");
     }
 

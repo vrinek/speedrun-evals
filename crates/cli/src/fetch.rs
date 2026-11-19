@@ -18,7 +18,9 @@ pub fn ensure(model: &Model, cache_dir: &Path) -> Result<PathBuf, String> {
     }
     fs::create_dir_all(path.parent().unwrap()).map_err(|e| e.to_string())?;
     eprintln!("Downloading {} ...", model.url);
-    let response = ureq::get(&model.url).call().map_err(|e| format!("{}: {e}", model.url))?;
+    let response = ureq::get(&model.url)
+        .call()
+        .map_err(|e| format!("{}: {e}", model.url))?;
     write_verified(response.into_body().into_reader(), &path, &model.sha256)?;
     Ok(path)
 }
@@ -39,7 +41,13 @@ fn write_verified(mut source: impl Read, dest: &Path, expected: &str) -> Result<
             file.write_all(&buffer[..n])?;
         }
         file.sync_all()?;
-        io::Result::Ok(hasher.finalize().iter().map(|byte| format!("{byte:02x}")).collect::<String>())
+        io::Result::Ok(
+            hasher
+                .finalize()
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>(),
+        )
     })();
     let outcome = match result {
         Ok(actual) if actual.eq_ignore_ascii_case(expected) => fs::rename(&part, dest).map_err(|e| e.to_string()),

@@ -39,14 +39,16 @@
             };
             cargoLock.lockFile = ./Cargo.lock;
             nativeBuildInputs = [ pkgs.makeWrapper ];
+            # Vulkan needs a userspace driver. The host's cannot be loaded into a Nix
+            # program, so ship Mesa's (AMD, Intel, nouveau), pinned like everything else.
+            # lvp is left out: it is a CPU rasteriser and would pose as a GPU.
+            # ponytail: the proprietary NVIDIA driver is not covered; it has to match the
+            # host kernel module, so it needs a nixGL-style wrapper. VK_DRIVER_FILES overrides.
             postInstall = ''
+              drivers=$(ls ${pkgs.mesa}/share/vulkan/icd.d/*.json | grep -v lvp_ | paste -sd:)
               wrapProgram $out/bin/speedrun \
-                --prefix PATH : ${
-                  pkgs.lib.makeBinPath [
-                    llama
-                    pkgs.pciutils
-                  ]
-                }
+                --prefix PATH : ${pkgs.lib.makeBinPath [ llama ]} \
+                --set-default VK_DRIVER_FILES "$drivers"
             '';
             meta = {
               license = pkgs.lib.licenses.agpl3Plus;

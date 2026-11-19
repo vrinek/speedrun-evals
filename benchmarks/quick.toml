@@ -3,7 +3,9 @@
 # the pipeline end to end; add harder suites as new files next to this one.
 name = "quick"
 version = 1
-system = "Answer the question. You may reason first, but the last line of your reply must be exactly: ANSWER: <your answer>"
+instructions = """
+You may reason first. Then finish your reply with a final line of exactly this form:
+ANSWER: <your answer>"""
 max_tokens = 4096
 
 [[task]]

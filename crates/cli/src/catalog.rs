@@ -23,11 +23,16 @@ struct ModelFile {
 }
 
 pub fn models() -> Vec<Model> {
-    toml::from_str::<ModelFile>(MODELS).expect("models.toml is checked by the tests").model
+    toml::from_str::<ModelFile>(MODELS)
+        .expect("models.toml is checked by the tests")
+        .model
 }
 
 pub fn suites() -> Vec<Suite> {
-    SUITES.iter().map(|text| Suite::parse(text).expect("suites are checked by the tests")).collect()
+    SUITES
+        .iter()
+        .map(|text| Suite::parse(text).expect("suites are checked by the tests"))
+        .collect()
 }
 
 #[cfg(test)]
@@ -42,10 +47,23 @@ mod tests {
         let ids: HashSet<_> = models.iter().map(|m| &m.id).collect();
         assert_eq!(ids.len(), models.len(), "duplicate model id");
         for m in &models {
-            assert!(m.id.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || "._-".contains(c)), "{}", m.id);
+            assert!(
+                m.id.chars()
+                    .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || "._-".contains(c)),
+                "{}",
+                m.id
+            );
             assert!(m.url.starts_with("https://"), "{}", m.id);
-            assert!(m.url.contains("/resolve/") && !m.url.contains("/resolve/main/"), "{} must pin a commit", m.id);
-            assert!(m.sha256.len() == 64 && m.sha256.chars().all(|c| c.is_ascii_hexdigit()), "{}", m.id);
+            assert!(
+                m.url.contains("/resolve/") && !m.url.contains("/resolve/main/"),
+                "{} must pin a commit",
+                m.id
+            );
+            assert!(
+                m.sha256.len() == 64 && m.sha256.chars().all(|c| c.is_ascii_hexdigit()),
+                "{}",
+                m.id
+            );
         }
     }
 
@@ -54,6 +72,6 @@ mod tests {
         let suites = suites();
         let names: HashSet<_> = suites.iter().map(|s| &s.name).collect();
         assert_eq!(names.len(), suites.len());
-        assert!(suites.iter().all(|s| s.system.contains("ANSWER:")));
+        assert!(suites.iter().all(|s| s.instructions.contains("ANSWER:")));
     }
 }

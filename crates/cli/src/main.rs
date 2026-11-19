@@ -57,11 +57,13 @@ fn run(command: Cmd) -> Result<(), String> {
             println!("Models:");
             catalog::models().iter().for_each(|m| println!("  {}", m.id));
             println!("Benchmarks:");
-            catalog::suites().iter().for_each(|s| println!("  {} (v{}, {} tasks)", s.name, s.version, s.tasks.len()));
+            catalog::suites()
+                .iter()
+                .for_each(|s| println!("  {} (v{}, {} tasks)", s.name, s.version, s.tasks.len()));
             Ok(())
         }
         Cmd::Hardware => {
-            let hardware = hardware::detect()?;
+            let hardware = hardware::detect(&server::list_devices()?)?;
             println!("{}", hardware.label());
             println!("{}", serde_json::to_string_pretty(&hardware).unwrap());
             Ok(())
@@ -79,20 +81,31 @@ fn benchmark_model(model_id: &str, benchmark: &str, out: PathBuf) -> Result<(), 
         .into_iter()
         .find(|s| s.name == benchmark)
         .ok_or(format!("unknown benchmark {benchmark}, see `speedrun list`"))?;
-    let hardware = hardware::detect()?;
-    let runtime = Runtime { name: "llama.cpp".into(), version: server::version()? };
+    let hardware = hardware::detect(&server::list_devices()?)?;
+    let runtime = Runtime {
+        name: "llama.cpp".into(),
+        version: server::version()?,
+    };
     eprintln!("Hardware: {}", hardware.label());
 
     let path = fetch::ensure(&model, &cache_dir()?)?;
     eprintln!("Loading {} ...", model.id);
     let mut server = server::LlamaServer::start(&path)?;
     // One untimed request so one-off start-up costs do not land on the first task.
-    server.complete("", "Hi", 1)?;
+    server.complete("Hi", 1)?;
 
-    let started_at_unix = SystemTime::now().duration_since(UNIX_EPOCH).map_err(|e| e.to_string())?.as_secs();
+    let started_at_unix = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|e| e.to_string())?
+        .as_secs();
     let tasks = runner::run_suite(&suite, &mut server, |task| {
         let mark = if task.passed { "pass" } else { "FAIL" };
-        eprintln!("  {mark}  {:>7.1}s  {:>6} tok  {}", task.wall_ms as f64 / 1000.0, task.output_tokens, task.id);
+        eprintln!(
+            "  {mark}  {:>7.1}s  {:>6} tok  {}",
+            task.wall_ms as f64 / 1000.0,
+            task.output_tokens,
+            task.id
+        );
     })?;
     drop(server);
 
@@ -101,7 +114,10 @@ fn benchmark_model(model_id: &str, benchmark: &str, out: PathBuf) -> Result<(), 
         cli_version: env!("CARGO_PKG_VERSION").into(),
         started_at_unix,
         hardware,
-        model: ModelRef { id: model.id, sha256: model.sha256 },
+        model: ModelRef {
+            id: model.id,
+            sha256: model.sha256,
+        },
         runtime,
         benchmark: suite.name,
         benchmark_version: suite.version,
@@ -109,8 +125,12 @@ fn benchmark_model(model_id: &str, benchmark: &str, out: PathBuf) -> Result<(), 
     };
     let dir = out.join(result.hardware.slug());
     fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
-    let file = dir.join(format!("{}--{}--{started_at_unix}.json", result.model.id, result.benchmark));
-    fs::write(&file, serde_json::to_string_pretty(&result).unwrap() + "\n").map_err(|e| format!("{}: {e}", file.display()))?;
+    let file = dir.join(format!(
+        "{}--{}--{started_at_unix}.json",
+        result.model.id, result.benchmark
+    ));
+    fs::write(&file, serde_json::to_string_pretty(&result).unwrap() + "\n")
+        .map_err(|e| format!("{}: {e}", file.display()))?;
 
     eprintln!(
         "Finished in {:.1}s, score {:.0}%, {} output tokens",

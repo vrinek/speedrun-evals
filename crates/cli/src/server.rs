@@ -41,8 +41,15 @@ impl LlamaServer {
             .stderr(Stdio::null())
             .spawn()
             .map_err(|e| format!("could not start {SERVER} (run the CLI through `nix run`): {e}"))?;
-        let agent = ureq::Agent::config_builder().timeout_global(Some(TASK_TIMEOUT)).build().into();
-        let mut server = LlamaServer { child, url: format!("http://127.0.0.1:{port}"), agent };
+        let agent = ureq::Agent::config_builder()
+            .timeout_global(Some(TASK_TIMEOUT))
+            .build()
+            .into();
+        let mut server = LlamaServer {
+            child,
+            url: format!("http://127.0.0.1:{port}"),
+            agent,
+        };
 
         let deadline = Instant::now() + LOAD_TIMEOUT;
         loop {
@@ -68,12 +75,9 @@ impl Drop for LlamaServer {
 }
 
 impl Completer for LlamaServer {
-    fn complete(&mut self, system: &str, prompt: &str, max_tokens: u32) -> Result<Completion, String> {
+    fn complete(&mut self, prompt: &str, max_tokens: u32) -> Result<Completion, String> {
         let request = json!({
-            "messages": [
-                {"role": "system", "content": system},
-                {"role": "user", "content": prompt},
-            ],
+            "messages": [{"role": "user", "content": prompt}],
             "max_tokens": max_tokens,
             "temperature": 0,
             "seed": 0,
@@ -94,21 +98,43 @@ fn parse_completion(response: &Value) -> Result<Completion, String> {
     let text = response["choices"][0]["message"]["content"].as_str();
     let output_tokens = response["usage"]["completion_tokens"].as_u64();
     match (text, output_tokens) {
-        (Some(text), Some(output_tokens)) => Ok(Completion { text: text.to_string(), output_tokens }),
+        (Some(text), Some(output_tokens)) => Ok(Completion {
+            text: text.to_string(),
+            output_tokens,
+        }),
         _ => Err(format!("unexpected response from {SERVER}: {response}")),
     }
 }
 
+/// Raw `--list-devices` output: the GPUs the runtime can use.
+pub fn list_devices() -> Result<String, String> {
+    let out = Command::new(SERVER)
+        .arg("--list-devices")
+        .output()
+        .map_err(|e| format!("could not run {SERVER} (run the CLI through `nix run`): {e}"))?;
+    Ok(String::from_utf8_lossy(&out.stdout).into_owned())
+}
+
 /// The runtime version recorded in results, e.g. `6123 (abc1234)`.
 pub fn version() -> Result<String, String> {
-    let out = Command::new(SERVER).arg("--version").output().map_err(|e| format!("could not run {SERVER}: {e}"))?;
+    let out = Command::new(SERVER)
+        .arg("--version")
+        .output()
+        .map_err(|e| format!("could not run {SERVER}: {e}"))?;
     // llama-server prints its version to stderr.
-    let text = format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr));
+    let text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
     parse_version(&text).ok_or(format!("no version in `{SERVER} --version` output"))
 }
 
 fn parse_version(output: &str) -> Option<String> {
-    output.lines().find_map(|line| line.strip_prefix("version:")).map(|v| v.trim().to_string())
+    output
+        .lines()
+        .find_map(|line| line.strip_prefix("version:"))
+        .map(|v| v.trim().to_string())
 }
 
 #[cfg(test)]
@@ -127,7 +153,11 @@ mod tests {
 
     #[test]
     fn an_error_body_is_an_error() {
-        assert!(parse_completion(&json!({"error": {"message": "context full"}})).unwrap_err().contains("context full"));
+        assert!(
+            parse_completion(&json!({"error": {"message": "context full"}}))
+                .unwrap_err()
+                .contains("context full")
+        );
     }
 
     #[test]
