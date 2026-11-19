@@ -3,6 +3,7 @@
 use speedrun_core::{Suite, TaskResult};
 use std::time::Instant;
 
+#[derive(Debug)]
 pub struct Completion {
     pub text: String,
     pub output_tokens: u64,
