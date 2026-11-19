@@ -30,7 +30,7 @@ svg { width: 100%; height: auto; display: block; }
 .dot { fill: var(--series); stroke: var(--surface); stroke-width: 2; }
 .hit { fill: transparent; }
 .point:hover .dot { r: 7; }
-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; display: block; overflow-x: auto; }
+table { margin-top: 12px; width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; display: block; overflow-x: auto; }
 th, td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
 th:first-child, td:first-child { text-align: left; }
 th { color: var(--muted); font-weight: 500; font-size: 0.875rem; }
