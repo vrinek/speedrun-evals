@@ -1,3 +1,5 @@
-fn main() {
-    println!("Hello, world!");
-}
+mod catalog;
+mod hardware;
+mod runner;
+
+fn main() {}

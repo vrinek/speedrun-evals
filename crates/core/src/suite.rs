@@ -9,6 +9,8 @@ pub struct Suite {
     pub version: u32,
     /// System prompt sent with every task. Must tell the model to finish with `ANSWER: <x>`.
     pub system: String,
+    /// Output token cap per task, so a looping model cannot run forever.
+    pub max_tokens: u32,
     #[serde(rename = "task")]
     pub tasks: Vec<Task>,
 }
@@ -63,6 +65,7 @@ mod tests {
 name = "demo"
 version = 1
 system = "End with ANSWER: <x>"
+max_tokens = 512
 
 [[task]]
 id = "add"
@@ -79,6 +82,7 @@ answer = "Paris"
     fn parses_a_suite() {
         let suite = Suite::parse(SUITE).unwrap();
         assert_eq!(suite.name, "demo");
+        assert_eq!(suite.max_tokens, 512);
         assert_eq!(suite.tasks.len(), 2);
         assert_eq!(suite.tasks[1].answer, "Paris");
     }
@@ -91,7 +95,7 @@ answer = "Paris"
 
     #[test]
     fn rejects_an_empty_suite() {
-        assert!(Suite::parse("name = \"x\"\nversion = 1\nsystem = \"s\"\ntask = []").is_err());
+        assert!(Suite::parse("name = \"x\"\nversion = 1\nsystem = \"s\"\nmax_tokens = 1\ntask = []").is_err());
     }
 
     #[test]

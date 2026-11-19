@@ -1,0 +1,137 @@
+# Quick: a small sanity benchmark of short questions with one exact answer.
+# ponytail: easy on purpose, strong models will all score near 100%. It proves
+# the pipeline end to end; add harder suites as new files next to this one.
+name = "quick"
+version = 1
+system = "Answer the question. You may reason first, but the last line of your reply must be exactly: ANSWER: <your answer>"
+max_tokens = 4096
+
+[[task]]
+id = "multiply"
+prompt = "What is 17 multiplied by 23?"
+answer = "391"
+
+[[task]]
+id = "add"
+prompt = "What is 1234 + 5678?"
+answer = "6912"
+
+[[task]]
+id = "power"
+prompt = "What is 2 to the power of 10?"
+answer = "1024"
+
+[[task]]
+id = "remainder"
+prompt = "What is the remainder when 100 is divided by 7?"
+answer = "2"
+
+[[task]]
+id = "sum-to-100"
+prompt = "What is the sum of all whole numbers from 1 to 100 inclusive?"
+answer = "5050"
+
+[[task]]
+id = "primes-below-30"
+prompt = "How many prime numbers are there below 30?"
+answer = "10"
+
+[[task]]
+id = "count-letter"
+prompt = "How many times does the letter r appear in the word strawberry?"
+answer = "3"
+
+[[task]]
+id = "reverse-word"
+prompt = "Write the word benchmark backwards, in lowercase."
+answer = "kramhcneb"
+
+[[task]]
+id = "ordering"
+prompt = "Alice is older than Bob. Bob is older than Carol. Who is the youngest? Answer with the name only."
+answer = "Carol"
+
+[[task]]
+id = "speed"
+prompt = "A train travels 150 km in 2.5 hours. What is its average speed in km/h? Answer with the number only."
+answer = "60"
+
+[[task]]
+id = "weekday"
+prompt = "If today is Wednesday, what day of the week is it 10 days from now? Answer with the day name only."
+answer = "Saturday"
+
+[[task]]
+id = "hex"
+prompt = "What is the hexadecimal number FF in decimal?"
+answer = "255"
+
+[[task]]
+id = "binary"
+prompt = "Write the decimal number 37 in binary, without any prefix."
+answer = "100101"
+
+[[task]]
+id = "python-set"
+prompt = '''
+What does this Python program print?
+
+print(len(set([1, 2, 2, 3, 3, 3])))'''
+answer = "3"
+
+[[task]]
+id = "python-squares"
+prompt = '''
+What does this Python program print?
+
+x = [i * i for i in range(5)]
+print(sum(x))'''
+answer = "30"
+
+[[task]]
+id = "python-split"
+prompt = '''
+What does this Python program print?
+
+print(len("a,b,,c".split(",")))'''
+answer = "4"
+
+[[task]]
+id = "sort-letters"
+prompt = "Sort the letters of the word delta alphabetically and write them as one lowercase word."
+answer = "adelt"
+
+[[task]]
+id = "heads-and-legs"
+prompt = "A farm has only chickens and cows. Together they have 20 heads and 56 legs. How many cows are there? Answer with the number only."
+answer = "8"
+
+[[task]]
+id = "sequence"
+prompt = "What is the next number in the sequence 2, 6, 12, 20, 30?"
+answer = "42"
+
+[[task]]
+id = "gcd"
+prompt = "What is the greatest common divisor of 84 and 126?"
+answer = "42"
+
+[[task]]
+id = "bat-and-ball"
+prompt = "A bat and a ball cost 110 cents in total. The bat costs 100 cents more than the ball. How many cents does the ball cost? Answer with the number only."
+answer = "5"
+
+[[task]]
+id = "seconds-in-day"
+prompt = "How many seconds are there in a day of exactly 24 hours? Answer with digits only, no separators."
+answer = "86400"
+
+[[task]]
+id = "roman"
+prompt = "What is the Roman numeral MCMXCIV as a decimal number?"
+answer = "1994"
+
+[[task]]
+id = "percent"
+prompt = "What is 15 percent of 240?"
+answer = "36"
