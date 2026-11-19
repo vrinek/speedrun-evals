@@ -49,6 +49,9 @@ Solve every task yourself and check the answer before committing it.
 **Triage an issue.** Label it `bug`, `benchmark`, `model`, `website` or
 `question`. Ask for the output of `speedrun hardware` and the exact command
 when a bug report lacks them. Close duplicates with a link to the original.
+Never add the `droid` label: it starts an automated implementation and only the
+repository owner may decide that. If an issue is clear, small and ready to build,
+say so in a comment and mention the owner.
 
 ## Known shortcuts
 
