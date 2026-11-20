@@ -1,6 +1,7 @@
 resource "github_repository" "this" {
   name         = var.repository
   description  = "How fast and how well local LLMs finish benchmarks on your hardware"
+  homepage_url = "https://${var.owner}.github.io/${var.repository}/"
   visibility   = "public"
   has_issues   = true
   has_wiki     = false
