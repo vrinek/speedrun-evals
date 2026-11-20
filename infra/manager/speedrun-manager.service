@@ -1,0 +1,16 @@
+[Unit]
+Description=Speedrun Evals manager: handle new GitHub notifications
+After=flashnext-sock.service network-online.target
+Wants=flashnext-sock.service
+
+[Service]
+Type=oneshot
+# The container sees the internet (for GitHub), the model socket, its own home
+# volume and nothing else of this machine.
+ExecStart=/usr/bin/podman run --rm --name speedrun-manager \
+  --env-file %h/.config/speedrun-manager.env \
+  --volume %t/flashnext.sock:/run/model.sock \
+  --volume speedrun-manager-home:/home/manager \
+  --memory 8g --cpus 4 \
+  localhost/speedrun-manager
+TimeoutStartSec=2h

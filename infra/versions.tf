@@ -5,10 +5,6 @@ terraform {
       source  = "integrations/github"
       version = "~> 6.0"
     }
-    incus = {
-      source  = "lxc/incus"
-      version = "~> 1.0"
-    }
   }
 }
 
@@ -16,6 +12,3 @@ terraform {
 provider "github" {
   owner = var.owner
 }
-
-# Talks to the local Incus daemon.
-provider "incus" {}

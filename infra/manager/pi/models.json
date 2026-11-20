@@ -1,0 +1,14 @@
+{
+  "providers": {
+    "local": {
+      "baseUrl": "http://127.0.0.1:8126/v1",
+      "api": "openai-completions",
+      "apiKey": "none",
+      "compat": { "supportsDeveloperRole": false, "supportsReasoningEffort": false },
+      "models": [
+        { "id": "qwen38-flash-next", "reasoning": true, "thinkingLevelMap": { "off": null },
+          "contextWindow": 131072, "maxTokens": 8192, "input": ["text"] }
+      ]
+    }
+  }
+}

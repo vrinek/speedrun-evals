@@ -1,0 +1,29 @@
+# The manager's whole world: git, gh, a Rust toolchain for the repository's
+# checks, and the Pi harness pointed at the local model.
+# Debian's own Rust is too old for the project's dependencies, so take the
+# current stable toolchain from the official image.
+FROM docker.io/library/rust:slim-trixie AS rust
+RUN rustup component add clippy rustfmt
+
+FROM docker.io/library/node:24-trixie-slim
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      ca-certificates git gh jq socat ripgrep fd-find gcc libc6-dev \
+ && rm -rf /var/lib/apt/lists/*
+COPY --from=rust /usr/local/cargo /usr/local/cargo
+COPY --from=rust /usr/local/rustup /usr/local/rustup
+ENV PATH=/usr/local/cargo/bin:$PATH \
+    RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/home/manager/.cargo
+RUN npm install -g @earendil-works/pi-coding-agent@1.1.0 && npm cache clean --force
+
+COPY pi/ /pi/agent/
+COPY PROMPT.md poll.sh /manager/
+
+# HOME is a volume: it keeps the checkout, the fork and the build cache between runs.
+ENV HOME=/home/manager \
+    PI_CODING_AGENT_DIR=/pi/agent \
+    PI_SKIP_VERSION_CHECK=1
+WORKDIR /home/manager
+ENTRYPOINT ["/manager/poll.sh"]

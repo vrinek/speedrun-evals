@@ -81,6 +81,7 @@ resource "github_repository_ruleset" "main" {
 # Triage: label, comment on, close and reopen issues and pull requests.
 # No push access. The manager proposes code changes from its own fork.
 resource "github_repository_collaborator" "manager" {
+  count      = var.manager_username == "" ? 0 : 1
   repository = github_repository.this.name
   username   = var.manager_username
   permission = "triage"

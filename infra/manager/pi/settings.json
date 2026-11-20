@@ -1,0 +1,6 @@
+{
+  "defaultProvider": "local",
+  "defaultModel": "qwen38-flash-next",
+  "quietStartup": true,
+  "retry": { "enabled": true, "maxRetries": 1, "provider": { "timeoutMs": 1800000, "maxRetries": 0 } }
+}
