@@ -34,10 +34,6 @@ enum Cmd {
         /// Directory to write the result file into
         #[arg(long, default_value = "results")]
         out: PathBuf,
-        /// Run even though another program is using the GPU. The result will not
-        /// be comparable, and the other program may slow down or fail.
-        #[arg(long)]
-        allow_busy_gpu: bool,
     },
     /// List the available models and benchmarks
     List,
@@ -72,16 +68,11 @@ fn run(command: Cmd) -> Result<(), String> {
             println!("{}", serde_json::to_string_pretty(&hardware).unwrap());
             Ok(())
         }
-        Cmd::Run {
-            model,
-            benchmark,
-            out,
-            allow_busy_gpu,
-        } => benchmark_model(&model, &benchmark, out, allow_busy_gpu),
+        Cmd::Run { model, benchmark, out } => benchmark_model(&model, &benchmark, out),
     }
 }
 
-fn benchmark_model(model_id: &str, benchmark: &str, out: PathBuf, allow_busy_gpu: bool) -> Result<(), String> {
+fn benchmark_model(model_id: &str, benchmark: &str, out: PathBuf) -> Result<(), String> {
     let model = catalog::models()
         .into_iter()
         .find(|m| m.id == model_id)
@@ -91,14 +82,6 @@ fn benchmark_model(model_id: &str, benchmark: &str, out: PathBuf, allow_busy_gpu
         .find(|s| s.name == benchmark)
         .ok_or(format!("unknown benchmark {benchmark}, see `speedrun list`"))?;
     let devices = server::list_devices()?;
-    let busy = hardware::busy_gpus(&devices);
-    if !busy.is_empty() && !allow_busy_gpu {
-        return Err(format!(
-            "another program is using the GPU ({}). A benchmark now would not be comparable \
-             and may slow that program down or make it fail. Close it first, or pass --allow-busy-gpu.",
-            busy.join("; ")
-        ));
-    }
     let hardware = hardware::detect(&devices)?;
     let runtime = Runtime {
         name: "llama.cpp".into(),
@@ -107,6 +90,12 @@ fn benchmark_model(model_id: &str, benchmark: &str, out: PathBuf, allow_busy_gpu
     eprintln!("Hardware: {}", hardware.label());
 
     let path = fetch::ensure(&model, &cache_dir()?)?;
+    let model_bytes = fs::metadata(&path)
+        .map_err(|e| format!("{}: {e}", path.display()))?
+        .len();
+    if let Some(why) = hardware::gpu_shortfall(&devices, model_bytes) {
+        return Err(why);
+    }
     eprintln!("Loading {} ...", model.id);
     let mut server = server::LlamaServer::start(&path)?;
     // One untimed request so one-off start-up costs do not land on the first task.

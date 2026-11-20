@@ -31,9 +31,8 @@ SHA-256), runs the benchmark and writes
 `results/<your-hardware>/<model>--<benchmark>--<time>.json`.
 
 For numbers worth comparing, close other heavy programs first. The tool refuses
-to start when another program already holds more than a quarter of a GPU's
-memory; `--allow-busy-gpu` overrides that, at your own risk and the other
-program's.
+to start when the model does not fit in the GPU memory that is free, because
+the runtime would then quietly run part of it on the CPU.
 
 ### Known limits
 
