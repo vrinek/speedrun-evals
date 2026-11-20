@@ -130,6 +130,7 @@ mod tests {
             score,
             wall_ms,
             output_tokens: 1,
+            started_at_unix: 0,
         }
     }
 

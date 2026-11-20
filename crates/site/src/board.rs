@@ -12,6 +12,7 @@ pub struct Entry {
     pub score: f64,
     pub wall_ms: u64,
     pub output_tokens: u64,
+    pub started_at_unix: u64,
 }
 
 pub struct Board {
@@ -33,6 +34,7 @@ pub fn boards(runs: Vec<RunResult>) -> BTreeMap<String, Board> {
             score: run.score(),
             wall_ms: run.wall_ms(),
             output_tokens: run.output_tokens(),
+            started_at_unix: run.started_at_unix,
             model: run.model.id,
         });
     }

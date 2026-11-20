@@ -19,6 +19,22 @@ pub fn escape(text: &str) -> String {
     out
 }
 
+/// The UTC calendar date of `unix` seconds since the epoch, as `YYYY-MM-DD`.
+/// Howard Hinnant's days-to-civil algorithm, with years starting on 1 March so
+/// the leap day falls at the end.
+pub fn utc_date(unix: u64) -> String {
+    let z = unix / 86_400 + 719_468;
+    let era = z / 146_097;
+    let doe = z % 146_097;
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = era * 400 + yoe + u64::from(month <= 2);
+    format!("{year:04}-{month:02}-{day:02}")
+}
+
 /// The landing page: pick your hardware.
 pub fn index_page(boards: &BTreeMap<String, Board>) -> String {
     let mut body = String::from(
@@ -44,14 +60,15 @@ pub fn hardware_page(board: &Board) -> String {
     let mut body = format!("<p><a href=\"../index.html\">All hardware</a></p>\n<h1>{label}</h1>\n");
     for (title, entries) in &board.benchmarks {
         body += &format!("<h2>{}</h2>\n{}\n", escape(title), chart(entries));
-        body += "<table>\n<thead><tr><th>Model</th><th>Score</th><th>Time to finish</th><th>Output tokens</th></tr></thead>\n<tbody>\n";
+        body += "<table>\n<thead><tr><th>Model</th><th>Score</th><th>Time to finish</th><th>Output tokens</th><th>Run on</th></tr></thead>\n<tbody>\n";
         for e in entries {
             body += &format!(
-                "<tr><td>{}</td><td>{:.0}%</td><td>{}</td><td>{}</td></tr>\n",
+                "<tr><td>{}</td><td>{:.0}%</td><td>{}</td><td>{}</td><td>{}</td></tr>\n",
                 escape(&e.model),
                 e.score * 100.0,
                 duration(e.wall_ms),
-                e.output_tokens
+                e.output_tokens,
+                utc_date(e.started_at_unix)
             );
         }
         body += "</tbody>\n</table>\n";
@@ -83,6 +100,15 @@ mod tests {
     }
 
     #[test]
+    fn utc_dates_from_unix_seconds() {
+        assert_eq!(utc_date(0), "1970-01-01");
+        assert_eq!(utc_date(951_782_400), "2000-02-29");
+        assert_eq!(utc_date(1_795_086_923), "2026-11-19");
+        assert_eq!(utc_date(1_798_761_599), "2026-12-31");
+        assert_eq!(utc_date(1_798_761_600), "2027-01-01");
+    }
+
+    #[test]
     fn index_links_to_every_hardware() {
         let page = index_page(&boards(vec![
             run("CPU <A>", "m1", 100, true),
@@ -107,8 +133,16 @@ mod tests {
         assert!(page.contains("<td>100%</td><td>2.0 s</td>"), "{page}");
         assert!(!page.contains("<bad>"));
         assert!(
-            page.contains("<th>Output tokens</th></tr>"),
+            page.contains("<th>Output tokens</th><th>Run on</th></tr>"),
             "no summary columns: every row is one run"
         );
+    }
+
+    #[test]
+    fn hardware_page_shows_the_date_each_run_started() {
+        let mut new = run("CPU", "m", 1000, true);
+        new.started_at_unix = 1_795_086_923;
+        let page = hardware_page(boards(vec![new]).values().next().unwrap());
+        assert!(page.contains("<td>15</td><td>2026-11-19</td></tr>"), "{page}");
     }
 }
