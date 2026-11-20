@@ -81,7 +81,8 @@ fn benchmark_model(model_id: &str, benchmark: &str, out: PathBuf) -> Result<(), 
         .into_iter()
         .find(|s| s.name == benchmark)
         .ok_or(format!("unknown benchmark {benchmark}, see `speedrun list`"))?;
-    let hardware = hardware::detect(&server::list_devices()?)?;
+    let devices = server::list_devices()?;
+    let hardware = hardware::detect(&devices)?;
     let runtime = Runtime {
         name: "llama.cpp".into(),
         version: server::version()?,
@@ -89,6 +90,12 @@ fn benchmark_model(model_id: &str, benchmark: &str, out: PathBuf) -> Result<(), 
     eprintln!("Hardware: {}", hardware.label());
 
     let path = fetch::ensure(&model, &cache_dir()?)?;
+    let model_bytes = fs::metadata(&path)
+        .map_err(|e| format!("{}: {e}", path.display()))?
+        .len();
+    if let Some(why) = hardware::gpu_shortfall(&devices, model_bytes) {
+        return Err(why);
+    }
     eprintln!("Loading {} ...", model.id);
     let mut server = server::LlamaServer::start(&path)?;
     // One untimed request so one-off start-up costs do not land on the first task.

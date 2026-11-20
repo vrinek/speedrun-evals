@@ -30,7 +30,9 @@ nix --extra-experimental-features 'nix-command flakes' run github:vrinek/speedru
 SHA-256), runs the benchmark and writes
 `results/<your-hardware>/<model>--<benchmark>--<time>.json`.
 
-For numbers worth comparing, close other heavy programs first.
+For numbers worth comparing, close other heavy programs first. The tool refuses
+to start when the model does not fit in the GPU memory that is free, because
+the runtime would then quietly run part of it on the CPU.
 
 ### Known limits
 

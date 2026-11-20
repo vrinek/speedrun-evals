@@ -39,25 +39,74 @@ pub fn parse_ram_gb(meminfo: &str) -> Result<u32, String> {
 /// `  Vulkan0: AMD Radeon 8060S Graphics (RADV STRIX_HALO) (96512 MiB, 14011 MiB free)`.
 /// For integrated GPUs the memory is the share of system RAM the driver may use.
 pub fn parse_gpus(devices: &str) -> Vec<Gpu> {
-    devices
-        .lines()
-        .filter_map(|line| {
-            let (_, device) = line.trim().split_once(": ")?;
-            let (name, memory) = device.rsplit_once(" (")?;
-            let mib: f64 = memory.split_once(" MiB")?.0.parse().ok()?;
-            // Drop the driver note, e.g. ` (RADV STRIX_HALO)`.
-            let name = name.split_once(" (").map_or(name, |(name, _)| name);
-            Some(Gpu {
-                name: name.to_string(),
-                vram_gb: Some((mib / 1024.0).round() as u32),
-            })
+    device_lines(devices)
+        .map(|(name, total_mib, _)| Gpu {
+            name: name.to_string(),
+            vram_gb: Some((total_mib / 1024.0).round() as u32),
         })
         .collect()
+}
+
+/// `(name, total MiB, free MiB)` for each device line.
+fn device_lines(devices: &str) -> impl Iterator<Item = (&str, f64, f64)> {
+    devices.lines().filter_map(|line| {
+        let (_, device) = line.trim().split_once(": ")?;
+        let (name, memory) = device.rsplit_once(" (")?;
+        let (total, free) = memory.split_once(" MiB, ")?;
+        // Drop the driver note, e.g. ` (RADV STRIX_HALO)`.
+        let name = name.split_once(" (").map_or(name, |(name, _)| name);
+        Some((name, total.parse().ok()?, free.split_once(" MiB")?.0.parse().ok()?))
+    })
+}
+
+/// Explains why `model_bytes` of model will not fit in the GPUs' free memory,
+/// or `None` if it fits (or there is no GPU and the run is CPU-only anyway).
+/// Without room the runtime quietly keeps part of the model on the CPU, and the
+/// result would be a slow number filed under a fast GPU. Loading it could also
+/// push out whatever else is using that memory.
+pub fn gpu_shortfall(devices: &str, model_bytes: u64) -> Option<String> {
+    let gpus: Vec<_> = device_lines(devices).collect();
+    if gpus.is_empty() {
+        return None;
+    }
+    let free: f64 = gpus.iter().map(|(_, _, free)| free).sum();
+    // ponytail: weights plus a fifth, plus 1 GiB for context and scratch buffers.
+    // A rule of thumb for the fixed 8192-token context; measure if it misjudges.
+    let needed = (model_bytes as f64 / (1 << 20) as f64 * 1.2 + 1024.0).round();
+    (free < needed).then(|| {
+        format!(
+            "the model needs about {needed} MiB of GPU memory but only {free} MiB free was found. \
+             Another program is probably using the GPU; close it and try again."
+        )
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const BUSY: &str = "Available devices:\n  \
+        Vulkan0: AMD Radeon 8060S Graphics (RADV STRIX_HALO) (96512 MiB, 9692 MiB free)\n";
+
+    #[test]
+    fn a_model_that_fits_in_free_gpu_memory_is_fine() {
+        // 2.5 GB model beside a large resident one: 10% free is still plenty.
+        assert_eq!(gpu_shortfall(BUSY, 2_497_280_256), None);
+    }
+
+    #[test]
+    fn a_model_larger_than_free_gpu_memory_is_refused() {
+        // 8 GiB of weights needs about 10.6 GiB with working memory.
+        let why = gpu_shortfall(BUSY, 8 << 30).unwrap();
+        assert!(why.contains("9692 MiB free") && why.contains("10854 MiB"), "{why}");
+    }
+
+    #[test]
+    fn free_memory_adds_up_across_gpus_and_cpu_only_runs_are_not_checked() {
+        let two = "  Vulkan0: A (8192 MiB, 6000 MiB free)\n  Vulkan1: B (8192 MiB, 6000 MiB free)\n";
+        assert_eq!(gpu_shortfall(two, 8 << 30), None);
+        assert_eq!(gpu_shortfall("Available devices:\n  (none)\n", 80 << 30), None);
+    }
 
     #[test]
     fn reads_the_cpu_model_name() {
