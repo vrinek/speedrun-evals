@@ -39,9 +39,10 @@ resource "github_issue_labels" "this" {
   }
 }
 
-# Nobody pushes to main: every change is a pull request with green CI and one
-# approval. The manager's approval does not count, because triage access cannot
-# approve, so a human always decides what is merged.
+# Nobody pushes to main: every change is a pull request with green CI.
+# No approval is required. Only the owner has write access, so merging is
+# already the owner's decision, and GitHub does not let anyone approve a pull
+# request opened under their own account.
 resource "github_repository_ruleset" "main" {
   name        = "main"
   repository  = github_repository.this.name
@@ -60,7 +61,7 @@ resource "github_repository_ruleset" "main" {
     non_fast_forward = true
 
     pull_request {
-      required_approving_review_count = 1
+      required_approving_review_count = 0
     }
 
     required_status_checks {
@@ -68,13 +69,6 @@ resource "github_repository_ruleset" "main" {
         context = "check"
       }
     }
-  }
-
-  # The owner may bypass, otherwise a one-person project cannot merge its own work.
-  bypass_actors {
-    actor_id    = 5 # the built-in "Repository admin" role
-    actor_type  = "RepositoryRole"
-    bypass_mode = "always"
   }
 }
 
