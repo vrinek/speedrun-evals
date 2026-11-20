@@ -39,25 +39,57 @@ pub fn parse_ram_gb(meminfo: &str) -> Result<u32, String> {
 /// `  Vulkan0: AMD Radeon 8060S Graphics (RADV STRIX_HALO) (96512 MiB, 14011 MiB free)`.
 /// For integrated GPUs the memory is the share of system RAM the driver may use.
 pub fn parse_gpus(devices: &str) -> Vec<Gpu> {
-    devices
-        .lines()
-        .filter_map(|line| {
-            let (_, device) = line.trim().split_once(": ")?;
-            let (name, memory) = device.rsplit_once(" (")?;
-            let mib: f64 = memory.split_once(" MiB")?.0.parse().ok()?;
-            // Drop the driver note, e.g. ` (RADV STRIX_HALO)`.
-            let name = name.split_once(" (").map_or(name, |(name, _)| name);
-            Some(Gpu {
-                name: name.to_string(),
-                vram_gb: Some((mib / 1024.0).round() as u32),
-            })
+    device_lines(devices)
+        .map(|(name, total_mib, _)| Gpu {
+            name: name.to_string(),
+            vram_gb: Some((total_mib / 1024.0).round() as u32),
         })
+        .collect()
+}
+
+/// `(name, total MiB, free MiB)` for each device line.
+fn device_lines(devices: &str) -> impl Iterator<Item = (&str, f64, f64)> {
+    devices.lines().filter_map(|line| {
+        let (_, device) = line.trim().split_once(": ")?;
+        let (name, memory) = device.rsplit_once(" (")?;
+        let (total, free) = memory.split_once(" MiB, ")?;
+        // Drop the driver note, e.g. ` (RADV STRIX_HALO)`.
+        let name = name.split_once(" (").map_or(name, |(name, _)| name);
+        Some((name, total.parse().ok()?, free.split_once(" MiB")?.0.parse().ok()?))
+    })
+}
+
+/// Describes every GPU that another program is already using heavily: less
+/// than three quarters of its memory free. A benchmark beside such a program
+/// gives numbers nobody can compare, and may starve that program.
+pub fn busy_gpus(devices: &str) -> Vec<String> {
+    device_lines(devices)
+        .filter(|(_, total, free)| *free < total * 0.75)
+        .map(|(name, total, free)| format!("{name}: {free} of {total} MiB free"))
         .collect()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_gpu_with_most_memory_in_use_is_busy() {
+        let devices = "Available devices:\n  \
+            Vulkan0: AMD Radeon 8060S Graphics (RADV STRIX_HALO) (96512 MiB, 14011 MiB free)\n  \
+            Vulkan1: NVIDIA GeForce RTX 3090 (24576 MiB, 23000 MiB free)\n";
+        assert_eq!(
+            busy_gpus(devices),
+            ["AMD Radeon 8060S Graphics: 14011 of 96512 MiB free"]
+        );
+    }
+
+    #[test]
+    fn idle_or_absent_gpus_are_not_busy() {
+        // A desktop session holding a quarter of the memory is still fine.
+        assert!(busy_gpus("  Vulkan0: Some GPU (8192 MiB, 6144 MiB free)\n").is_empty());
+        assert!(busy_gpus("Available devices:\n  (none)\n").is_empty());
+    }
 
     #[test]
     fn reads_the_cpu_model_name() {

@@ -34,6 +34,10 @@ enum Cmd {
         /// Directory to write the result file into
         #[arg(long, default_value = "results")]
         out: PathBuf,
+        /// Run even though another program is using the GPU. The result will not
+        /// be comparable, and the other program may slow down or fail.
+        #[arg(long)]
+        allow_busy_gpu: bool,
     },
     /// List the available models and benchmarks
     List,
@@ -68,11 +72,16 @@ fn run(command: Cmd) -> Result<(), String> {
             println!("{}", serde_json::to_string_pretty(&hardware).unwrap());
             Ok(())
         }
-        Cmd::Run { model, benchmark, out } => benchmark_model(&model, &benchmark, out),
+        Cmd::Run {
+            model,
+            benchmark,
+            out,
+            allow_busy_gpu,
+        } => benchmark_model(&model, &benchmark, out, allow_busy_gpu),
     }
 }
 
-fn benchmark_model(model_id: &str, benchmark: &str, out: PathBuf) -> Result<(), String> {
+fn benchmark_model(model_id: &str, benchmark: &str, out: PathBuf, allow_busy_gpu: bool) -> Result<(), String> {
     let model = catalog::models()
         .into_iter()
         .find(|m| m.id == model_id)
@@ -81,7 +90,16 @@ fn benchmark_model(model_id: &str, benchmark: &str, out: PathBuf) -> Result<(), 
         .into_iter()
         .find(|s| s.name == benchmark)
         .ok_or(format!("unknown benchmark {benchmark}, see `speedrun list`"))?;
-    let hardware = hardware::detect(&server::list_devices()?)?;
+    let devices = server::list_devices()?;
+    let busy = hardware::busy_gpus(&devices);
+    if !busy.is_empty() && !allow_busy_gpu {
+        return Err(format!(
+            "another program is using the GPU ({}). A benchmark now would not be comparable \
+             and may slow that program down or make it fail. Close it first, or pass --allow-busy-gpu.",
+            busy.join("; ")
+        ));
+    }
+    let hardware = hardware::detect(&devices)?;
     let runtime = Runtime {
         name: "llama.cpp".into(),
         version: server::version()?,
