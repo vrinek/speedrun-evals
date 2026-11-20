@@ -4,14 +4,13 @@ Two parts.
 
 ## 1. GitHub (Terraform)
 
-The repository's settings, labels, a ruleset that makes `main`
-pull-request-only, and triage access for the manager's account.
+The repository's settings, labels and a ruleset that makes `main`
+pull-request-only with green CI.
 
 ```sh
 cd infra
 terraform init
-GITHUB_TOKEN=$(gh auth token) terraform apply                              # before the manager account exists
-GITHUB_TOKEN=$(gh auth token) terraform apply -var manager_username=<login>   # after
+GITHUB_TOKEN=$(gh auth token) terraform apply
 ```
 
 `terraform.tfstate` is git-ignored and holds no secrets.
@@ -24,8 +23,8 @@ minutes; it handles each unread GitHub notification and exits.
 
 | | |
 |---|---|
-| Can | Comment, label, close and reopen issues and pull requests; open pull requests from its own fork |
-| Cannot | Push to the repository, merge, approve, change settings |
+| Can | Comment on issues and pull requests; open pull requests from its own fork |
+| Cannot | Label, close, push to the repository, merge, change settings. Its account has no access to the repository beyond any GitHub user's. |
 | Sees of the host | The model's unix socket and its own home volume. No host files, no host ports. |
 
 Its instructions are [`manager/PROMPT.md`](manager/PROMPT.md) plus the repository's `AGENTS.md`.

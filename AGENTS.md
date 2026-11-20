@@ -46,9 +46,10 @@ and add one `include_str!` line to `SUITES` in `crates/cli/src/catalog.rs`.
 Each task needs exactly one correct answer that can be compared as text.
 Solve every task yourself and check the answer before committing it.
 
-**Triage an issue.** Label it `bug`, `benchmark`, `model`, `website` or
-`question`. Ask for the output of `speedrun hardware` and the exact command
-when a bug report lacks them. Close duplicates with a link to the original.
+**Triage an issue.** Decide which label fits: `bug`, `benchmark`, `model`,
+`website` or `question`. If your account cannot add labels, name the label in
+your comment. Ask for the output of `speedrun hardware` and the exact command
+when a bug report lacks them. For a duplicate, link the original and say it can be closed.
 Never add the `droid` label: it starts an automated implementation and only the
 repository owner may decide that. If an issue is clear, small and ready to build,
 say so in a comment and mention the owner.
