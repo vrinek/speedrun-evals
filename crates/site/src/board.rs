@@ -1,18 +1,17 @@
 //! Turns a pile of result files into leaderboards: one per hardware, and
-//! within it one list of models per benchmark.
+//! within it one list of runs per benchmark.
 
 use speedrun_core::{Hardware, RunResult};
 use std::collections::BTreeMap;
 
-/// One model's standing on one benchmark on one hardware.
+/// One run of one model on one benchmark on one hardware. Runs are never
+/// averaged or merged: every submitted result is shown as it was measured.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Entry {
     pub model: String,
     pub score: f64,
     pub wall_ms: u64,
     pub output_tokens: u64,
-    /// How many submitted runs this entry summarises.
-    pub runs: usize,
 }
 
 pub struct Board {
@@ -21,51 +20,26 @@ pub struct Board {
     pub benchmarks: BTreeMap<String, Vec<Entry>>,
 }
 
-type ByBenchmarkAndModel = BTreeMap<String, BTreeMap<String, Vec<RunResult>>>;
-
-/// Groups runs by hardware slug. Several runs of the same model are summarised
-/// by the run with the median wall-clock time, so one lucky or unlucky run does not decide.
+/// Groups runs by hardware slug, then benchmark.
 pub fn boards(runs: Vec<RunResult>) -> BTreeMap<String, Board> {
-    // hardware slug -> benchmark title -> model id -> runs
-    let mut grouped: BTreeMap<String, (Hardware, ByBenchmarkAndModel)> = BTreeMap::new();
+    let mut boards: BTreeMap<String, Board> = BTreeMap::new();
     for run in runs {
-        let (_, benchmarks) = grouped
-            .entry(run.hardware.slug())
-            .or_insert_with(|| (run.hardware.clone(), BTreeMap::new()));
+        let board = boards.entry(run.hardware.slug()).or_insert_with(|| Board {
+            hardware: run.hardware.clone(),
+            benchmarks: BTreeMap::new(),
+        });
         let title = format!("{} v{}", run.benchmark, run.benchmark_version);
-        benchmarks
-            .entry(title)
-            .or_default()
-            .entry(run.model.id.clone())
-            .or_default()
-            .push(run);
+        board.benchmarks.entry(title).or_default().push(Entry {
+            score: run.score(),
+            wall_ms: run.wall_ms(),
+            output_tokens: run.output_tokens(),
+            model: run.model.id,
+        });
     }
-    grouped
-        .into_iter()
-        .map(|(slug, (hardware, benchmarks))| {
-            let benchmarks = benchmarks
-                .into_iter()
-                .map(|(title, models)| {
-                    let mut entries: Vec<Entry> = models.into_values().map(summarise).collect();
-                    entries.sort_by(|a, b| b.score.total_cmp(&a.score).then(a.wall_ms.cmp(&b.wall_ms)));
-                    (title, entries)
-                })
-                .collect();
-            (slug, Board { hardware, benchmarks })
-        })
-        .collect()
-}
-
-fn summarise(mut runs: Vec<RunResult>) -> Entry {
-    runs.sort_by_key(RunResult::wall_ms);
-    let median = &runs[(runs.len() - 1) / 2];
-    Entry {
-        model: median.model.id.clone(),
-        score: median.score(),
-        wall_ms: median.wall_ms(),
-        output_tokens: median.output_tokens(),
-        runs: runs.len(),
+    for entries in boards.values_mut().flat_map(|board| board.benchmarks.values_mut()) {
+        entries.sort_by(|a, b| b.score.total_cmp(&a.score).then(a.wall_ms.cmp(&b.wall_ms)));
     }
+    boards
 }
 
 #[cfg(test)]
@@ -132,23 +106,15 @@ pub mod tests {
     }
 
     #[test]
-    fn repeated_runs_collapse_to_the_median_wall_clock() {
+    fn every_run_is_its_own_entry() {
         let boards = boards(vec![
             run("CPU", "m", 900, true),
             run("CPU", "m", 100, false),
             run("CPU", "m", 300, true),
         ]);
         let entries = &boards.values().next().unwrap().benchmarks["quick v1"];
-        assert_eq!(
-            entries,
-            &[Entry {
-                model: "m".into(),
-                score: 1.0,
-                wall_ms: 300,
-                output_tokens: 15,
-                runs: 3
-            }]
-        );
+        let seen: Vec<_> = entries.iter().map(|e| (e.model.as_str(), e.score, e.wall_ms)).collect();
+        assert_eq!(seen, [("m", 1.0, 300), ("m", 1.0, 900), ("m", 0.5, 100)]);
     }
 
     #[test]

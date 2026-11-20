@@ -44,15 +44,14 @@ pub fn hardware_page(board: &Board) -> String {
     let mut body = format!("<p><a href=\"../index.html\">All hardware</a></p>\n<h1>{label}</h1>\n");
     for (title, entries) in &board.benchmarks {
         body += &format!("<h2>{}</h2>\n{}\n", escape(title), chart(entries));
-        body += "<table>\n<thead><tr><th>Model</th><th>Score</th><th>Time to finish</th><th>Output tokens</th><th>Runs</th></tr></thead>\n<tbody>\n";
+        body += "<table>\n<thead><tr><th>Model</th><th>Score</th><th>Time to finish</th><th>Output tokens</th></tr></thead>\n<tbody>\n";
         for e in entries {
             body += &format!(
-                "<tr><td>{}</td><td>{:.0}%</td><td>{}</td><td>{}</td><td>{}</td></tr>\n",
+                "<tr><td>{}</td><td>{:.0}%</td><td>{}</td><td>{}</td></tr>\n",
                 escape(&e.model),
                 e.score * 100.0,
                 duration(e.wall_ms),
-                e.output_tokens,
-                e.runs
+                e.output_tokens
             );
         }
         body += "</tbody>\n</table>\n";
@@ -107,5 +106,9 @@ mod tests {
         assert!(good < bad);
         assert!(page.contains("<td>100%</td><td>2.0 s</td>"), "{page}");
         assert!(!page.contains("<bad>"));
+        assert!(
+            page.contains("<th>Output tokens</th></tr>"),
+            "no summary columns: every row is one run"
+        );
     }
 }
