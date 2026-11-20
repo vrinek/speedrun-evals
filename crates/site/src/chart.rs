@@ -11,7 +11,8 @@ const RIGHT: f64 = 24.0;
 const TOP: f64 = 16.0;
 const BOTTOM: f64 = 48.0;
 /// ponytail: labels are not collision-checked, so past this many models only the
-/// hover tooltip and the table name the dots.
+/// hover tooltip and the table name the dots. Each model is labelled once, on its
+/// best run; its other runs are told apart by hovering.
 const MAX_LABELLED: usize = 8;
 
 pub fn chart(entries: &[Entry]) -> String {
@@ -61,6 +62,10 @@ pub fn chart(entries: &[Entry]) -> String {
         HEIGHT - 8.0
     );
 
+    let mut models: Vec<&str> = entries.iter().map(|e| e.model.as_str()).collect();
+    models.sort();
+    models.dedup();
+    let mut labelled: Vec<&str> = Vec::new();
     for entry in entries {
         let (cx, cy) = (x(entry.wall_ms as f64 / unit_ms), y(entry.score));
         let name = escape(&entry.model);
@@ -69,7 +74,9 @@ pub fn chart(entries: &[Entry]) -> String {
             entry.score * 100.0,
             duration(entry.wall_ms)
         );
-        if entries.len() <= MAX_LABELLED {
+        // Entries are best first, so a model's first dot is its best run.
+        if models.len() <= MAX_LABELLED && !labelled.contains(&entry.model.as_str()) {
+            labelled.push(&entry.model);
             // Keep the label inside the plot: flip it to the left of dots near the right edge.
             let (dx, anchor) = if cx > LEFT + plot_w * 0.7 {
                 (-10.0, "end")
@@ -123,7 +130,6 @@ mod tests {
             score,
             wall_ms,
             output_tokens: 1,
-            runs: 1,
         }
     }
 
@@ -173,6 +179,18 @@ mod tests {
         assert!(fast.0 < slow.0 && fast.1 < slow.1);
         assert_eq!(fast.1, TOP);
         assert_eq!(slow.1, HEIGHT - BOTTOM);
+    }
+
+    #[test]
+    fn repeated_runs_are_separate_dots_under_one_label() {
+        let svg = chart(&[
+            entry("alpha", 0.9, 60_000),
+            entry("alpha", 0.9, 61_000),
+            entry("alpha", 0.8, 59_000),
+        ]);
+        assert_eq!(svg.matches("<circle class=\"dot\"").count(), 3);
+        assert_eq!(svg.matches("<title>alpha").count(), 3);
+        assert_eq!(svg.matches(">alpha</text>").count(), 1);
     }
 
     #[test]

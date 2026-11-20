@@ -27,8 +27,10 @@ nix --extra-experimental-features 'nix-command flakes' run github:vrinek/speedru
 ```
 
 `run` detects your hardware, downloads the model (checked against a pinned
-SHA-256), runs the benchmark and writes
-`results/<your-hardware>/<model>--<benchmark>--<time>.json`.
+SHA-256) and runs the benchmark three times, restarting the runtime in between.
+Each run writes its own file,
+`results/<your-hardware>/<model>--<benchmark>--<time>.json`. Use `--runs N` for
+a different number of runs.
 
 For numbers worth comparing, close other heavy programs first. The tool refuses
 to start when the model does not fit in the GPU memory that is free, because
@@ -45,8 +47,9 @@ the runtime would then quietly run part of it on the CPU.
 
 ## Submit your result
 
-Fork this repository, add the result file under `results/` exactly as the tool
-wrote it, and open a pull request. CI rejects files that do not parse.
+Fork this repository, add the result files under `results/` exactly as the tool
+wrote them, and open a pull request. Every run appears on the website as its own
+dot; nothing is averaged. CI rejects files that do not parse.
 
 Results are self-reported: nothing proves a file came from an unmodified run.
 Reviewers look for numbers that are out of line with similar hardware.
