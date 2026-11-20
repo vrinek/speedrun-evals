@@ -5,12 +5,13 @@ Wants=flashnext-sock.service
 
 [Service]
 Type=oneshot
+# --tz=local: timestamps in its logs match the host's journal.
 # The container sees the internet (for GitHub), the model socket, its own home
 # volume and nothing else of this machine.
 ExecStart=/usr/bin/podman run --rm --name speedrun-manager \
   --env-file %h/.config/speedrun-manager.env \
   --volume %t/flashnext.sock:/run/model.sock \
   --volume speedrun-manager-home:/home/manager \
-  --memory 8g --cpus 4 \
+  --memory 8g --cpus 4 --tz=local \
   localhost/speedrun-manager
 TimeoutStartSec=2h
