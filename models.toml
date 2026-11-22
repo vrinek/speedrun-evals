@@ -89,3 +89,10 @@ sha256 = "18f1187f38e7994b05c08cb45c674b90b7f17523687c83a4614fe493f7ea739d"
 id = "qwen3.8-27b-q8_0"
 url = "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/4af51b3542f775b0a8e4b310bfb3f17e01c306c9/Qwen3.8-27B-Q8_0.gguf"
 sha256 = "a680f44a06920e5d689774823782006aa3acc8db95750323373b24139b67e348"
+
+# The files at the top of this repository only run in Unsloth's own app; the
+# ones under Mainline_Support are the llama.cpp-compatible conversions.
+[[model]]
+id = "inkling-2-mini-ud-q4_k_m"
+url = "https://huggingface.co/unsloth/Inkling-2-Mini-GGUF/resolve/45fd08764f2b0bf16b03a5483a80e5c7aaec8772/Mainline_Support/Inkling-2-Mini-UD-Q4_K_M.gguf_file"
+sha256 = "78fcedcf93c5d1bfe83e225513b71392bb52259be0eaa5f8899c856a2e5834ae"
