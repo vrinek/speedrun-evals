@@ -17,3 +17,75 @@ sha256 = "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5"
 id = "gemma-3-4b-it-q4_k_m"
 url = "https://huggingface.co/unsloth/gemma-3-4b-it-GGUF/resolve/5a3566e716d80f709ed7b79817eaf7733d2a1fce/gemma-3-4b-it-Q4_K_M.gguf"
 sha256 = "04a43a22e8d2003deda5acc262f68ec1005fa76c735a9962a8c77042a74a7d19"
+
+[[model]]
+id = "tinyllama-1.1b-chat-v1.0-q4_k_m"
+url = "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/52e7645ba7c309695bec7ac98f4f005b139cf465/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
+sha256 = "9fecc3b3cd76bba89d504f29b616eedf7da85b96540e490ca5824d3f7d2776a0"
+
+[[model]]
+id = "llama-2-7b-chat-q4_k_m"
+url = "https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/191239b3e26b2882fb562ffccdd1cf0f65402adb/llama-2-7b-chat.Q4_K_M.gguf"
+sha256 = "08a5566d61d7cb6b420c3e4387a39e0078e1f2fe5f055f3a03887385304d4bfa"
+
+[[model]]
+id = "mistral-7b-instruct-v0.2-q4_k_m"
+url = "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/3a6fbf4a41a1d52e415a4958cde6856d34b2db93/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
+sha256 = "3e0039fd0273fcbebb49228943b17831aadd55cbcbf56f0af00499be2040ccf9"
+
+[[model]]
+id = "gpt-oss-20b-mxfp4"
+url = "https://huggingface.co/lmstudio-community/gpt-oss-20b-GGUF/resolve/21f8a86825e36be34d24601e6d5ab45e2d366f4b/gpt-oss-20b-MXFP4.gguf"
+sha256 = "65d06d31a3977d553cb3af137b5c26b5f1e9297a6aaa29ae7caa98788cde53ab"
+
+[[model]]
+id = "qwen3-coder-30b-a3b-instruct-q4_k_m"
+url = "https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/b17cb02dd882d5b6ab62fc777ad2995f19668350/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf"
+sha256 = "fadc3e5f8d42bf7e894a785b05082e47daee4df26680389817e2093056f088ad"
+
+[[model]]
+id = "qwen3.8-27b-ud-q4_k_xl"
+url = "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/4af51b3542f775b0a8e4b310bfb3f17e01c306c9/Qwen3.8-27B-UD-Q4_K_XL.gguf"
+sha256 = "2a5f3565f39cf885103da591182c1266da64745737b42b452fd3e675369f1211"
+
+[[model]]
+id = "gemma-4-31b-it-q4_k_m"
+url = "https://huggingface.co/lmstudio-community/gemma-4-31B-it-GGUF/resolve/67a72ce462184ca84e9531dfe657ee73b4ecc89d/gemma-4-31B-it-Q4_K_M.gguf"
+sha256 = "8f3479643461601703f717931e399cc440dbd5ada598c025d6296c8165d94be9"
+
+[[model]]
+id = "qwen3-next-80b-a3b-instruct-ud-q4_k_xl"
+url = "https://huggingface.co/unsloth/Qwen3-Next-80B-A3B-Instruct-GGUF/resolve/6688872b7a4e5eb8a121ceea08009530a024ba1d/Qwen3-Next-80B-A3B-Instruct-UD-Q4_K_XL.gguf"
+sha256 = "49e554f954afbfc9f627b8be236adf16c1e51d8e5ecaa0e65ac8ede4e2c41a56"
+
+# Other quantisations of models above, to show what precision costs and buys.
+
+[[model]]
+id = "gemma-3-4b-it-q2_k"
+url = "https://huggingface.co/unsloth/gemma-3-4b-it-GGUF/resolve/5a3566e716d80f709ed7b79817eaf7733d2a1fce/gemma-3-4b-it-Q2_K.gguf"
+sha256 = "6bb299a8fae8c3ad385e898a1121e9eff8371d9c50b32756ddd710abf43bc235"
+
+[[model]]
+id = "gemma-3-4b-it-q8_0"
+url = "https://huggingface.co/unsloth/gemma-3-4b-it-GGUF/resolve/5a3566e716d80f709ed7b79817eaf7733d2a1fce/gemma-3-4b-it-Q8_0.gguf"
+sha256 = "81bf0583ab5bad155a5a3b15d155a880a1a1e4f7de2de5c06f10f64ac49f8336"
+
+[[model]]
+id = "qwen3-coder-30b-a3b-instruct-q2_k"
+url = "https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/b17cb02dd882d5b6ab62fc777ad2995f19668350/Qwen3-Coder-30B-A3B-Instruct-Q2_K.gguf"
+sha256 = "6db9853d31fdb928a731666c9d44e8cdebf52f62f4810cb0908c6c677e6c84b5"
+
+[[model]]
+id = "qwen3-coder-30b-a3b-instruct-q8_0"
+url = "https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/b17cb02dd882d5b6ab62fc777ad2995f19668350/Qwen3-Coder-30B-A3B-Instruct-Q8_0.gguf"
+sha256 = "4ff1cff607804037bf6d2168249c570baa4e1621292b159c0e06591e0d7c3066"
+
+[[model]]
+id = "qwen3.8-27b-ud-q2_k_xl"
+url = "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/4af51b3542f775b0a8e4b310bfb3f17e01c306c9/Qwen3.8-27B-UD-Q2_K_XL.gguf"
+sha256 = "18f1187f38e7994b05c08cb45c674b90b7f17523687c83a4614fe493f7ea739d"
+
+[[model]]
+id = "qwen3.8-27b-q8_0"
+url = "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/4af51b3542f775b0a8e4b310bfb3f17e01c306c9/Qwen3.8-27B-Q8_0.gguf"
+sha256 = "a680f44a06920e5d689774823782006aa3acc8db95750323373b24139b67e348"
