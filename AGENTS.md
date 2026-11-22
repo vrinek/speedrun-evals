@@ -13,6 +13,15 @@ cargo test
 cargo run -p speedrun-site -- results dist
 ```
 
+CI also has a `nix` job (`.github/workflows/nix.yml`) that builds the flake and runs
+`./result/bin/speedrun list`. It runs only when a file the flake reads changes. It
+needs Nix, so without Nix you cannot run it yourself: say so in the pull request
+and let CI run it. With Nix:
+
+```sh
+nix build && ./result/bin/speedrun list
+```
+
 ## Rules
 
 1. Rust only. No JavaScript on the website, no scripts in other languages.
