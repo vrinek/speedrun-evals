@@ -35,7 +35,13 @@ pub fn boards(runs: Vec<RunResult>) -> BTreeMap<String, Board> {
             wall_ms: run.wall_ms(),
             output_tokens: run.output_tokens(),
             started_at_unix: run.started_at_unix,
-            model: run.model.id,
+            // ponytail: llama.cpp is the default and stays unnamed; any other runtime is
+            // part of the name, so its runs are their own dots. A runtime column or
+            // filter once there are more than two.
+            model: match run.runtime.name.as_str() {
+                "llama.cpp" => run.model.id,
+                other => format!("{} ({other})", run.model.id),
+            },
         });
     }
     for entries in boards.values_mut().flat_map(|board| board.benchmarks.values_mut()) {
@@ -117,6 +123,18 @@ pub mod tests {
         let entries = &boards.values().next().unwrap().benchmarks["quick v1"];
         let seen: Vec<_> = entries.iter().map(|e| (e.model.as_str(), e.score, e.wall_ms)).collect();
         assert_eq!(seen, [("m", 1.0, 300), ("m", 1.0, 900), ("m", 0.5, 100)]);
+    }
+
+    #[test]
+    fn a_runtime_other_than_llama_cpp_is_named_beside_the_model() {
+        let mut gufo = run("CPU", "m", 100, true);
+        gufo.runtime.name = "gufo".into();
+        let boards = boards(vec![run("CPU", "m", 200, true), gufo]);
+        let names: Vec<_> = boards.values().next().unwrap().benchmarks["quick v1"]
+            .iter()
+            .map(|e| e.model.as_str())
+            .collect();
+        assert_eq!(names, ["m (gufo)", "m"]);
     }
 
     #[test]

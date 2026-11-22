@@ -40,6 +40,9 @@ enum Cmd {
         /// and writes its own result file.
         #[arg(long, default_value_t = 3, value_parser = clap::value_parser!(u32).range(1..))]
         runs: u32,
+        /// The program that runs the model. `gufo` must be on PATH.
+        #[arg(long, value_enum, default_value = "llama.cpp")]
+        runtime: server::Engine,
     },
     /// List the available models and benchmarks
     List,
@@ -79,11 +82,18 @@ fn run(command: Cmd) -> Result<(), String> {
             benchmark,
             out,
             runs,
-        } => benchmark_model(&model, &benchmark, out, runs),
+            runtime,
+        } => benchmark_model(&model, &benchmark, out, runs, runtime),
     }
 }
 
-fn benchmark_model(model_id: &str, benchmark: &str, out: PathBuf, runs: u32) -> Result<(), String> {
+fn benchmark_model(
+    model_id: &str,
+    benchmark: &str,
+    out: PathBuf,
+    runs: u32,
+    engine: server::Engine,
+) -> Result<(), String> {
     let model = catalog::models()
         .into_iter()
         .find(|m| m.id == model_id)
@@ -95,8 +105,8 @@ fn benchmark_model(model_id: &str, benchmark: &str, out: PathBuf, runs: u32) -> 
     let devices = server::list_devices()?;
     let hardware = hardware::detect(&devices)?;
     let runtime = Runtime {
-        name: "llama.cpp".into(),
-        version: server::version()?,
+        name: engine.name().into(),
+        version: engine.version()?,
     };
     eprintln!("Hardware: {}", hardware.label());
 
@@ -110,7 +120,7 @@ fn benchmark_model(model_id: &str, benchmark: &str, out: PathBuf, runs: u32) -> 
     for run in 1..=runs {
         eprintln!("Run {run} of {runs}: loading {} ...", model.id);
         // A fresh runtime per run, so no run benefits from another's cached prompts.
-        let mut server = server::LlamaServer::start(&path)?;
+        let mut server = server::Server::start(engine, &path)?;
         // One untimed request so one-off start-up costs do not land on the first task.
         server.complete("Hi", 1)?;
 
