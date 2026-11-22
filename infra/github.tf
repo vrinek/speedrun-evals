@@ -31,7 +31,7 @@ resource "github_issue_labels" "this" {
       website   = "1d76db"
       question  = "d876e3"
       result    = "bfdadc"
-      droid     = "000000" # starts .github/workflows/droid.yml, owner only
+      droid     = "000000" # starts .github/workflows/factory-implement-labelled-issue.yml, owner only
     }
     content {
       name  = label.key
