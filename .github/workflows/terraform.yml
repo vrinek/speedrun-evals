@@ -1,0 +1,20 @@
+name: Terraform
+on:
+  pull_request:
+    paths:
+      - "**.tf"
+      - "**/.terraform.lock.hcl"
+      - ".github/workflows/terraform.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      # No backend and no credentials: validate only checks the configuration.
+      - run: terraform -chdir=infra init -backend=false -lockfile=readonly
+      - run: terraform -chdir=infra validate
