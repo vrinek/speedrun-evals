@@ -1,0 +1,40 @@
+name: Nix
+on:
+  pull_request:
+    paths: &flake-inputs
+      - "flake.nix"
+      - "flake.lock"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "crates/**"
+      - "benchmarks/**"
+      - "models.toml"
+      - ".github/workflows/nix.yml"
+  push:
+    branches: [main]
+    paths: *flake-inputs
+
+permissions:
+  contents: read
+
+jobs:
+  # Not a required check: it is slow when llama.cpp has to be rebuilt.
+  nix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      # Enables flakes and the nix command.
+      - uses: cachix/install-nix-action@v32.0.0
+      # llama.cpp with Vulkan is not in the public binary cache. Keyed on what it is
+      # built from, and a miss restores the newest older cache, so only a change
+      # that actually alters llama.cpp rebuilds it.
+      - uses: nix-community/cache-nix-action@v7.0.2
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.nix', 'flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          # Before saving, drop everything that ./result does not need: build tools
+          # come back from the public binary cache.
+          gc-max-store-size-linux: 1G
+      - run: nix build .#packages.x86_64-linux.default
+      - run: ./result/bin/speedrun list
