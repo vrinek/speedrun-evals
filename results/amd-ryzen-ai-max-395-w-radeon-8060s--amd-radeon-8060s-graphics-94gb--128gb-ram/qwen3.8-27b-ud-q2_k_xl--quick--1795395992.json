@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "cli_version": "0.1.0",
+  "started_at_unix": 1795395992,
+  "hardware": {
+    "cpu": "AMD RYZEN AI MAX+ 395 w/ Radeon 8060S",
+    "ram_gb": 128,
+    "gpus": [
+      {
+        "name": "AMD Radeon 8060S Graphics",
+        "vram_gb": 94
+      }
+    ],
+    "os": "Linux 7.2.11-arch1-1"
+  },
+  "model": {
+    "id": "qwen3.8-27b-ud-q2_k_xl",
+    "sha256": "18f1187f38e7994b05c08cb45c674b90b7f17523687c83a4614fe493f7ea739d"
+  },
+  "runtime": {
+    "name": "llama.cpp",
+    "version": "1.0.0-dev (build 12633, commit 9c10c94)"
+  },
+  "benchmark": "quick",
+  "benchmark_version": 1,
+  "tasks": [
+    {
+      "id": "multiply",
+      "passed": true,
+      "wall_ms": 5383,
+      "output_tokens": 103
+    },
+    {
+      "id": "add",
+      "passed": true,
+      "wall_ms": 4573,
+      "output_tokens": 86
+    },
+    {
+      "id": "power",
+      "passed": true,
+      "wall_ms": 5504,
+      "output_tokens": 105
+    },
+    {
+      "id": "remainder",
+      "passed": true,
+      "wall_ms": 3912,
+      "output_tokens": 73
+    },
+    {
+      "id": "sum-to-100",
+      "passed": true,
+      "wall_ms": 5709,
+      "output_tokens": 109
+    },
+    {
+      "id": "primes-below-30",
+      "passed": true,
+      "wall_ms": 8910,
+      "output_tokens": 172
+    },
+    {
+      "id": "count-letter",
+      "passed": true,
+      "wall_ms": 7715,
+      "output_tokens": 149
+    },
+    {
+      "id": "reverse-word",
+      "passed": true,
+      "wall_ms": 30705,
+      "output_tokens": 602
+    },
+    {
+      "id": "ordering",
+      "passed": true,
+      "wall_ms": 5711,
+      "output_tokens": 108
+    },
+    {
+      "id": "speed",
+      "passed": true,
+      "wall_ms": 5883,
+      "output_tokens": 112
+    },
+    {
+      "id": "weekday",
+      "passed": true,
+      "wall_ms": 10067,
+      "output_tokens": 195
+    },
+    {
+      "id": "hex",
+      "passed": true,
+      "wall_ms": 4651,
+      "output_tokens": 87
+    },
+    {
+      "id": "binary",
+      "passed": true,
+      "wall_ms": 7991,
+      "output_tokens": 154
+    },
+    {
+      "id": "python-set",
+      "passed": true,
+      "wall_ms": 9781,
+      "output_tokens": 189
+    },
+    {
+      "id": "python-squares",
+      "passed": true,
+      "wall_ms": 8081,
+      "output_tokens": 155
+    },
+    {
+      "id": "python-split",
+      "passed": true,
+      "wall_ms": 8764,
+      "output_tokens": 169
+    },
+    {
+      "id": "sort-letters",
+      "passed": true,
+      "wall_ms": 4338,
+      "output_tokens": 81
+    },
+    {
+      "id": "heads-and-legs",
+      "passed": true,
+      "wall_ms": 5698,
+      "output_tokens": 105
+    },
+    {
+      "id": "sequence",
+      "passed": true,
+      "wall_ms": 10669,
+      "output_tokens": 207
+    },
+    {
+      "id": "gcd",
+      "passed": true,
+      "wall_ms": 4673,
+      "output_tokens": 88
+    },
+    {
+      "id": "bat-and-ball",
+      "passed": true,
+      "wall_ms": 12191,
+      "output_tokens": 235
+    },
+    {
+      "id": "seconds-in-day",
+      "passed": true,
+      "wall_ms": 7453,
+      "output_tokens": 143
+    },
+    {
+      "id": "roman",
+      "passed": true,
+      "wall_ms": 9496,
+      "output_tokens": 183
+    },
+    {
+      "id": "percent",
+      "passed": true,
+      "wall_ms": 5261,
+      "output_tokens": 100
+    }
+  ]
+}
